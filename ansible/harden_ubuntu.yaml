@@ -1,12 +1,14 @@
----
 - name: Harden Ubuntu based on CIS
   hosts: all
   become: yes
 
   tasks:
 
-    - name: Create separate partition for /var/log (manual step or use cloud-init on AMI build)
-      debug: msg="Manual setup required for /var/log partitioning"
+    - name: Install auditd
+      apt:
+        name: auditd
+        state: present
+        update_cache: yes
 
     - name: Ensure IP forwarding is disabled
       sysctl:
@@ -36,11 +38,13 @@
     - name: Collect login/logout events
       lineinfile:
         path: /etc/audit/rules.d/audit.rules
+        create: yes
         line: "-w /var/log/wtmp -p wa"
 
     - name: Collect file deletion events
       lineinfile:
         path: /etc/audit/rules.d/audit.rules
+        create: yes
         line: "-a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat -F auid>=1000 -F auid!=4294967295 -k delete"
 
     - name: Set password expiration to 90 days
